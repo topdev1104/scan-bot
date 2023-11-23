@@ -1,0 +1,28 @@
+{
+  "name": "new-paire",
+  "version": "1.0.0",
+  "description": "",
+  "main": "start.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@moralisweb3/common-evm-utils": "^2.21.0",
+    "@thanpolas/uniswap-chain-queries": "^0.1.1",
+    "axios": "^1.4.0",
+    "covalentjs": "^0.0.3",
+    "ejs": "^3.1.9",
+    "ether.js": "^1.0.0",
+    "ethers": "^6.4.0",
+    "express": "^4.18.2",
+    "html": "^1.0.0",
+    "moralis": "^2.21.0",
+    "node-telegram-bot-api": "^0.64.0",
+    "socket.io": "^4.6.1",
+    "tronweb": "^5.2.0",
+    "tslib": "^2.5.2",
+    "web3": "^1.10.0"
+  }
+}
