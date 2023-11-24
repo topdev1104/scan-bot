@@ -9,8 +9,8 @@ const Moralis = require("moralis").default;
 const { EvmChain } = require("@moralisweb3/common-evm-utils");
 const BananaGunRouter = '0xdB5889E35e379Ef0498aaE126fc2CCE1fbD23216'; // Replace with the actual token contract address
 const mastroRouter = '0x80a64c6D7f12C47B7c66c5B4E20E72bc1FCd5d9e'; // Replace with the actual token contract address
-const wethAddress = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'; // WETH token address
-const daiAddress = '0x6B175474E89094C44Da98b954EedeAC495271d0F'; // DAI token address
+let wethAddress = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'; // WETH token address
+let daiAddress = '0x6B175474E89094C44Da98b954EedeAC495271d0F'; // DAI token address
 
 const TelegramBot = require("node-telegram-bot-api");
 const BOT_TOKEN = '6380901957:AAH9MwW4odTi3SwUZmeCn-JzwfFXXr5oh4Q';
@@ -30,9 +30,14 @@ const bot = new TelegramBot(BOT_TOKEN, {
     polling: true,
   });
 
+  
+let bananaGunCount = 0;
+let mastroCount = 0;
+
 bot.onText(/\/start/, async function (msg) {
     const getTokenStatusFor20s = async (tokenAddress,msg) => {
-     
+        bananaGunCount = 0
+        mastroCount = 0;
         // Set timeout of 20s
         const timeout = 20 * 1000;
       
@@ -48,11 +53,11 @@ bot.onText(/\/start/, async function (msg) {
       
           subscription.on('data', async (blockHeader) => {
             const tx = await getTransactionReceipt(blockHeader.transactionHash);
-            if(tx.to.toLowerCase() === BananaGunRouter.toLowerCase()){
+            if(tx?.to?.toLowerCase() === BananaGunRouter.toLowerCase()){
                 bananaGunCount ++;   
                 console.log('BananaGunRouter');
             }
-            if(tx.to.toLowerCase() === mastroRouter.toLowerCase()){
+            if(tx?.to?.toLowerCase() === mastroRouter.toLowerCase()){
                 console.log('mastroRouter');
                 mastroCount ++;
             }
@@ -65,11 +70,11 @@ bot.onText(/\/start/, async function (msg) {
           }, timeout);
       
         }).then(async() => {
-            return await getTokenInfos(tokenAddress, async function (result, result2) {
+            await getTokenInfos(tokenAddress, async function (result, result2) {
                 console.log(bananaGunCount , mastroCount,'bananaGunCount + mastroCount');
-                if(bananaGunCount + mastroCount > 0){
+                if(bananaGunCount + mastroCount >= 10){
                     bot.sendMessage(msg.chat.id,
-                        `🏵 Massive Buys Detected: ${bananaGunCount+mastroCount} txs in 20 secs \n🍌Banana: ${bananaGunCount} \n🤖Mastro: ${mastroCount} \nSymbol : ${result.data[0]?.contract_ticker_symbol} \nAddress : ${tokenAddress}`,{
+                        `🏵 Massive Buys Detected: ${bananaGunCount+mastroCount} txs in 20 secs \n🍌Banana: ${bananaGunCount} \n🤖Mastro: ${mastroCount} \nSymbol : ${result.data[0]?.contract_ticker_symbol} \nAddress : https://etherscan.io/address/${tokenAddress}`,{
                             parse_mode:'HTML',
                             entities: [
                                 {
@@ -81,10 +86,9 @@ bot.onText(/\/start/, async function (msg) {
                             
                           }
                     );
-                    bananaGunCount = 0;
-                    mastroCount = 0;
+                    // bananaGunCount = 0;
+                    // mastroCount = 0;
                 }
-                return true;
             })
           // Calculate elapsed time
           // Resolve once timeout reached
@@ -93,26 +97,42 @@ bot.onText(/\/start/, async function (msg) {
     }// Repeat the above process for each exchange you want to monitor
     bot.sendMessage(msg.chat.id, `Welcome ${msg.chat.first_name}`);
     uniswapFactoryContract.events.PairCreated({}, async (error, event) => {
-        if (error) {
-            return;
-        }
         const pair = event.returnValues;
-        const token0 = pair.token0;
-        if(token0 != wethAddress || token0 != daiAddress){
-            getTokenStatusFor20s(pair.token0,msg)
+        const token0 = pair.token0?.toLowerCase();
+        const token1 = pair.token1?.toLowerCase();
+        wethAddress = wethAddress.toLowerCase();
+        daiAddress = daiAddress.toLowerCase();
+        let tokenAddr = token0;
+
+        if(token0 == wethAddress || token0 == daiAddress){
+            tokenAddr = token1
+        }        
+        if(token1 == wethAddress || token1 == daiAddress){
+            tokenAddr = token0
         }
+        await getTokenStatusFor20s(tokenAddr,msg)
     });
     uniswapV3FactoryContract.events.PoolCreated({},async (error,event)=>{
-        if(error) return false;
         const pair = event.returnValues;
-        const token0 = pair.token0;
-        if(token0 != wethAddress ||  token0 != daiAddress){
-            getTokenStatusFor20s(pair.token0,msg)
+        const token0 = pair.token0?.toLowerCase();
+        const token1 = pair.token1?.toLowerCase();
+        wethAddress = wethAddress.toLowerCase();
+        daiAddress = daiAddress.toLowerCase();
+        let tokenAddr = token0;
+
+        if(token0 == wethAddress || token0 == daiAddress){
+            tokenAddr = token1
+        }        
+        if(token1 == wethAddress || token1 == daiAddress){
+            tokenAddr = token0
         }
+        
+        if(token0 != wethAddress && token0 != daiAddress && token1 != wethAddress && token1 != daiAddress){
+           await getTokenStatusFor20s(tokenAddr,msg)
+        }
+
     })
 })
-let bananaGunCount = 0;
-let mastroCount = 0;
 // Connect to an Ethereum node
 
 let pairsList = [];
